@@ -9,6 +9,7 @@ class Board:
             for column in string.ascii_lowercase[:15]:
                 self.squares[column + str(row)] = None
         self.plays = []
+        self.border_squares_history = [] #stores border_squares at each moment for comodity and speed
     
     def add_play(self, play : Dict[str, str], check_for_real_words = True) -> Tuple[bool, int, str]: #devuelve la validacion, los puntos, y un string que nombra la jugada
         """Adds a play to the board if the play is valid.\n
@@ -24,9 +25,25 @@ class Board:
         words = self.__get_all_new_words(play, direction, check_for_real_words)
         valid, points, msg = Board.__elaborate_answer(words)
         if valid:
-            self.__update_board_and_border_squares(play)
+            self.__update(play)
         return (valid, points, msg)
     
+    def revert_play(self) -> None:
+        """Reverts last recorded play"""
+        for square in self.plays[-1]:
+            self.squares[square] = None
+        self.plays.pop()
+        self.border_squares_history.pop()
+        self.border_squares = set(self.border_squares_history[-1])
+    
+    def challenge(self) -> Tuple[bool, int, str]:
+        """Challenges last play. Returns a tuple describing the play, if last play was valid, or describing the error if it wasnt
+        The tuple describing the play or error is the same as in add_play
+        """
+        play = self.plays[-1]
+        self.revert_play()
+        return self.add_play(play)
+        
     #Private methods
     
     @property
@@ -126,10 +143,12 @@ class Board:
         points *= word_multiplicator
         if (check_for_real_words and not(lexicon.validate(word))):
             points = None
+        if len(play) == 7: #En este caso el jugador coloco toda su mano, y estamos en presencia de un scrabble
+            points = points + 50
         return (start_square, word, points)
         
-    def __update_board_and_border_squares(self, play : Dict[str, str]) -> None:
-        """Given a play described as in add_play, puts the play in the board and updates the border squares"""
+    def __update(self, play : Dict[str, str]) -> None:
+        """Given a play described as in add_play, puts the play in the board and updates the border squares, and the history of plays and border_squares"""
         for square in play:
             self.squares[square] = play[square]
         for square in play:
@@ -139,6 +158,8 @@ class Board:
             for neighbor in neighbors:
                 if self.squares[neighbor] is None:
                     self.border_squares.add(neighbor)
+        self.plays.append(play)
+        self.border_squares_history.append(list(self.border_squares))
     
     @staticmethod
     def __elaborate_answer(words : List[Tuple[str, str, int]]) -> Tuple[bool, int, str]:
@@ -204,3 +225,23 @@ class Board:
         if row == '1':
             return None
         return (position[0] + str(int(row) - 1))
+    
+    def show(self):
+        for row in range(1, 16):
+            line = ""
+            for column in range(1, 16):
+                square = chr(ord('a') + column - 1) + str(row)
+                tile = self.squares[square]
+                if tile is None:
+                    word_multiplicator, letter_multiplicator = square_multiplicator(square)
+                    if word_multiplicator > 1:
+                        tile = str(word_multiplicator) + "Xw"
+                    if letter_multiplicator > 1:
+                        tile = str(letter_multiplicator) + "Xl"
+                    if tile is None:
+                        tile = ""
+                line = line + " " + tile
+                for i in range(0, 4 - len(tile)):
+                    line = line + " "
+                line = line + "|"
+            print(line)

@@ -13,7 +13,9 @@ class Bag:
         shuffle(self.tiles)
     
     def draw(self, n : int) -> List[str]:
-        """Takes n tiles out of the bag and returns those tiles"""
+        """Takes n tiles out of the bag and returns those tiles\n
+        If there are not enough tiles, returns None
+        """
         if self.tiles_left < n:
             return None
         drawn_tiles = []
@@ -28,19 +30,19 @@ class Bag:
         self.actions.append(("INSERT", new_tiles))
         shuffle(self.tiles)
     
-    def revert_last_action(self) -> bool:
+    def revert_last_action(self) -> None:
         """Reverts last insertion or drawing"""
         action_type, tiles = self.actions[-1]
         match action_type:
             case "INIT":
-                return False
+                return
             case "DRAW":
                 self.insert(tiles)
             case "INSERT":
                 self.draw(tiles)
         self.actions.pop()
         self.actions.pop()
-        return True
+        return
 
     @property
     def tiles_left(self) -> int:

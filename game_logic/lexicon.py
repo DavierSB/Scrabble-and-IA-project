@@ -1,7 +1,7 @@
 import pygtrie
 class Lexicon:
     def __init__(self):
-        file = open('fise-2.txt', 'r')
+        file = open('game_logic/fise-2.txt', 'r')
         words = file.read().split('\n')
         self.trie = pygtrie.CharTrie()
         for word in words:
